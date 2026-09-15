@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from scapy.all import rdpcap, IP, IPv6, TCP, UDP, Ether, Raw
+from scapy.all import rdpcap, IP, IPv6, TCP, UDP, Ether, Raw, ICMP, ICMPv6EchoRequest, ICMPv6EchoReply
 import os
 
 app = Flask(__name__)
@@ -41,6 +41,12 @@ def parse_packet(packet):
         data["src_port"] = packet[UDP].sport
         data["dst_port"] = packet[UDP].dport
         data["transport"] = "UDP"
+    elif packet.haslayer(ICMP):
+        data["transport"] = "ICMP"
+        data["icmp_type"] = packet[ICMP].type
+        data["icmp_code"] = packet[ICMP].code
+    elif packet.haslayer(ICMPv6EchoRequest) or packet.haslayer(ICMPv6EchoReply):
+        data["transport"] = "ICMPv6"
 
     if packet.haslayer(Raw):
         try:
