@@ -8,6 +8,7 @@ function App() {
   const [packets, setPackets] = useState([]);
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [stats, setStats] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
@@ -33,6 +34,7 @@ function App() {
       const data = await response.json();
       setPackets(data);
       setSelectedPacket(null);
+      setCurrentPage(0);
 
       // Also fetch stats for the dashboard
       const statsFormData = new FormData();
@@ -77,7 +79,7 @@ function App() {
               </tr>
             </thead>
             <tbody>
-              {packets.slice(0, 50).map((packet, index) => (
+              {packets.slice(currentPage * 50, currentPage * 50 + 50).map((packet, index) => (
                 <tr
                   key={index}
                   onClick={() => setSelectedPacket(packet)}
@@ -95,7 +97,24 @@ function App() {
               ))}
             </tbody>
           </table>
-          <p style={{ fontSize: "12px", color: "gray" }}>Showing first 50 packets (out of {packets.length})</p>
+
+          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", alignItems: "center", gap: "15px" }}>
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(p - 1, 0))}
+              disabled={currentPage === 0}
+            >
+              Previous
+            </button>
+            <span style={{ fontSize: "13px" }}>
+              Showing {currentPage * 50 + 1}–{Math.min(currentPage * 50 + 50, packets.length)} of {packets.length}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => (p + 1) * 50 < packets.length ? p + 1 : p)}
+              disabled={(currentPage + 1) * 50 >= packets.length}
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 
@@ -149,11 +168,24 @@ function App() {
               <div style={{ backgroundColor: "#c9b3ff", padding: "10px 14px", borderRadius: "6px" }}>
                 <strong>Transport ({selectedPacket.transport})</strong>
                 <div style={{ fontSize: "13px" }}>
-                  Src Port: {selectedPacket.src_port} &nbsp;→&nbsp; Dst Port: {selectedPacket.dst_port}
                   {selectedPacket.transport === "TCP" && (
                     <>
+                      Src Port: {selectedPacket.src_port} &nbsp;→&nbsp; Dst Port: {selectedPacket.dst_port}
                       <br />Flags: {selectedPacket.tcp_flags} &nbsp; Seq: {selectedPacket.seq} &nbsp; Ack: {selectedPacket.ack}
                     </>
+                  )}
+                  {selectedPacket.transport === "UDP" && (
+                    <>
+                      Src Port: {selectedPacket.src_port} &nbsp;→&nbsp; Dst Port: {selectedPacket.dst_port}
+                    </>
+                  )}
+                  {selectedPacket.transport === "ICMP" && (
+                    <>
+                      ICMP Type: {selectedPacket.icmp_type} &nbsp; Code: {selectedPacket.icmp_code}
+                    </>
+                  )}
+                  {selectedPacket.transport === "ICMPv6" && (
+                    <>ICMPv6 Echo message (ping)</>
                   )}
                 </div>
               </div>
